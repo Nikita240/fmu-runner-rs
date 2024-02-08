@@ -1,7 +1,7 @@
 use crate::model_description::{FmiModelDescription, ScalarVariable};
 use libfmi::{
-    fmi2Boolean, fmi2CallbackFunctions, fmi2Component, fmi2Integer, fmi2Real, fmi2Status, fmi2Type,
-    fmi2ValueReference, Fmi2Dll,
+    fmi2Boolean, fmi2Byte, fmi2CallbackFunctions, fmi2Component, fmi2FMUstate, fmi2Integer,
+    fmi2Real, fmi2Status, fmi2Type, fmi2ValueReference, Fmi2Dll,
 };
 use std::{
     borrow::Borrow,
@@ -388,6 +388,95 @@ impl<C: Borrow<FmuLibrary>> FmuInstance<C> {
                 communication_step_size,
                 no_set_fmustate_prior_to_current_point as fmi2Boolean,
             )
+        })
+    }
+
+    pub fn serialized_fmu_state_size(&self, size: &mut usize) -> Result<(), FmuError> {
+        let mut fmu2state: fmi2FMUstate = std::ptr::null_mut();
+        let pfmu2state = std::ptr::addr_of_mut!(fmu2state);
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2GetFMUstate(self.instance, pfmu2state)
+        })?;
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2SerializedFMUstateSize(self.instance, *pfmu2state, size)
+        })?;
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2FreeFMUstate(self.instance, pfmu2state)
+        })
+    }
+
+    pub fn serialize_fmu_state(
+        &self,
+        serialized_state: &mut [u8],
+        size: usize,
+    ) -> Result<(), FmuError> {
+        let mut fmu2state: fmi2FMUstate = std::ptr::null_mut();
+        let pfmu2state = std::ptr::addr_of_mut!(fmu2state);
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2GetFMUstate(self.instance, pfmu2state)
+        })?;
+        let raw_serialized_state: *mut fmi2Byte = serialized_state.as_mut_ptr() as *mut i8;
+        Self::ok_or_err(unsafe {
+            self.lib.borrow().fmi.fmi2SerializeFMUstate(
+                self.instance,
+                *pfmu2state,
+                raw_serialized_state,
+                size,
+            )
+        })?;
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2FreeFMUstate(self.instance, pfmu2state)
+        })
+    }
+
+    pub fn deserialize_fmu_state(
+        &self,
+        serialized_state: &[u8],
+        size: usize,
+    ) -> Result<(), FmuError> {
+        let mut fmu2state: fmi2FMUstate = std::ptr::null_mut();
+        let pfmu2state = std::ptr::addr_of_mut!(fmu2state);
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2GetFMUstate(self.instance, pfmu2state)
+        })?;
+        let raw_serialized_state: *const fmi2Byte = serialized_state.as_ptr() as *const i8;
+        Self::ok_or_err(unsafe {
+            self.lib.borrow().fmi.fmi2DeSerializeFMUstate(
+                self.instance,
+                raw_serialized_state,
+                size,
+                pfmu2state,
+            )
+        })?;
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2SetFMUstate(self.instance, *pfmu2state)
+        })?;
+        Self::ok_or_err(unsafe {
+            self.lib
+                .borrow()
+                .fmi
+                .fmi2FreeFMUstate(self.instance, pfmu2state)
         })
     }
 
