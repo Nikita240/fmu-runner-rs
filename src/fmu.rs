@@ -451,12 +451,6 @@ impl<C: Borrow<FmuLibrary>> FmuInstance<C> {
     ) -> Result<(), FmuError> {
         let mut fmu2state: fmi2FMUstate = std::ptr::null_mut();
         let pfmu2state = std::ptr::addr_of_mut!(fmu2state);
-        Self::ok_or_err(unsafe {
-            self.lib
-                .borrow()
-                .fmi
-                .fmi2GetFMUstate(self.instance, pfmu2state)
-        })?;
         let raw_serialized_state: *const fmi2Byte = serialized_state.as_ptr() as *const i8;
         Self::ok_or_err(unsafe {
             self.lib.borrow().fmi.fmi2DeSerializeFMUstate(
