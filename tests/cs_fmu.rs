@@ -42,7 +42,7 @@ fn test_bouncing_ball() {
 // Save a snapshot and restore it later
 #[test]
 fn test_bouncing_ball_with_snapshot() {
-    let fmu = Fmu::unpack(Path::new("./tests/fmu/BouncingBall.fmu"))
+    let fmu = Fmu::unpack(Path::new("./tests/fmu/bouncing_ball.fmu"))
         .unwrap()
         .load(fmi2Type::fmi2CoSimulation)
         .unwrap();
@@ -59,7 +59,7 @@ fn test_bouncing_ball_with_snapshot() {
         const STEP_SIZE: f64 = 0.5;
         let h1: f64 = H0 + solve_free_fall(STEP_SIZE);
         let h2: f64 = H0 + solve_free_fall(2.0 * STEP_SIZE);
-        let h_var = signals.get("h").unwrap();
+        let h_var = signals.get("h_m").unwrap();
         let h_val = || {
             fmu_cs
                 .get_reals(&[h_var])
@@ -67,7 +67,9 @@ fn test_bouncing_ball_with_snapshot() {
                 .unwrap()
         };
 
-        fmu_cs.set_reals(&HashMap::from([(h_var, H0)])).unwrap();
+        fmu_cs
+            .set_reals(&HashMap::from([(&signals["h_start"], H0)]))
+            .unwrap();
 
         // Enter initialization
         fmu_cs.enter_initialization_mode().unwrap();
@@ -135,7 +137,7 @@ fn test_bouncing_ball_with_snapshot_reinit() {
     let mut state;
 
     {
-        let fmu = Fmu::unpack(Path::new("./tests/fmu/BouncingBall.fmu"))
+        let fmu = Fmu::unpack(Path::new("./tests/fmu/bouncing_ball.fmu"))
             .unwrap()
             .load(fmi2Type::fmi2CoSimulation)
             .unwrap();
@@ -146,15 +148,17 @@ fn test_bouncing_ball_with_snapshot_reinit() {
 
         fmu_cs.setup_experiment(0.0, None, None).unwrap();
 
-        let h_var = signals.get("h").unwrap();
+        let h_var = signals.get("h_m").unwrap();
         let h_val = || {
             fmu_cs
                 .get_reals(&[h_var])
                 .map(|hm| *hm.get(&h_var).unwrap())
                 .unwrap()
         };
-    
-        fmu_cs.set_reals(&HashMap::from([(h_var, H0)])).unwrap();
+
+        fmu_cs
+            .set_reals(&HashMap::from([(&signals["h_start"], H0)]))
+            .unwrap();
 
         // Enter initialization
         fmu_cs.enter_initialization_mode().unwrap();
@@ -190,7 +194,7 @@ fn test_bouncing_ball_with_snapshot_reinit() {
 
     // Reload the FMU from disk, re-initialize it and reload the snapshot
     {
-        let fmu = Fmu::unpack(Path::new("./tests/fmu/BouncingBall.fmu"))
+        let fmu = Fmu::unpack(Path::new("./tests/fmu/bouncing_ball.fmu"))
             .unwrap()
             .load(fmi2Type::fmi2CoSimulation)
             .unwrap();
@@ -203,7 +207,7 @@ fn test_bouncing_ball_with_snapshot_reinit() {
         fmu_cs.enter_initialization_mode().unwrap();
         fmu_cs.exit_initialization_mode().unwrap();
 
-        let h_var = signals.get("h").unwrap();
+        let h_var = signals.get("h_m").unwrap();
         let h_val = || {
             fmu_cs
                 .get_reals(&[h_var])
