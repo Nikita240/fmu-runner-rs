@@ -384,7 +384,7 @@ impl<C: Borrow<FmuLibrary>> FmuInstance<C> {
         })
     }
 
-    pub fn get_set_state_capability(&self) -> Option<FmuGetSetStateCapability<C>> {
+    pub fn get_set_state_capability(&self) -> Option<FmuGetSetStateCapability<'_, C>> {
         if let Some(description) = self.lib.borrow().model_description.co_simulation.as_ref() {
             if description.can_get_and_set_fmustate {
                 Some(FmuGetSetStateCapability(self))
@@ -404,7 +404,7 @@ impl<C: Borrow<FmuLibrary>> FmuInstance<C> {
         }
     }
 
-    pub fn serialize_state_capability(&self) -> Option<FmuSerializeStateCapability<C>> {
+    pub fn serialize_state_capability(&self) -> Option<FmuSerializeStateCapability<'_, C>> {
         if let Some(description) = self.lib.borrow().model_description.co_simulation.as_ref() {
             if description.can_serialize_fmustate {
                 Some(FmuSerializeStateCapability(self))
@@ -493,21 +493,21 @@ impl<C: Borrow<FmuLibrary>> FmuInstance<C> {
     pub fn get_reals<'fmu>(
         &'fmu self,
         signals: &[&'fmu ScalarVariable],
-    ) -> Result<HashMap<&ScalarVariable, fmi2Real>, FmuError> {
+    ) -> Result<HashMap<&'fmu ScalarVariable, fmi2Real>, FmuError> {
         self.get(signals, Fmi2Dll::fmi2GetReal)
     }
 
     pub fn get_integers<'fmu>(
         &'fmu self,
         signals: &[&'fmu ScalarVariable],
-    ) -> Result<HashMap<&ScalarVariable, fmi2Integer>, FmuError> {
+    ) -> Result<HashMap<&'fmu ScalarVariable, fmi2Integer>, FmuError> {
         self.get(signals, Fmi2Dll::fmi2GetInteger)
     }
 
     pub fn get_booleans<'fmu>(
         &'fmu self,
         signals: &[&'fmu ScalarVariable],
-    ) -> Result<HashMap<&ScalarVariable, fmi2Integer>, FmuError> {
+    ) -> Result<HashMap<&'fmu ScalarVariable, fmi2Integer>, FmuError> {
         self.get(signals, Fmi2Dll::fmi2GetBoolean)
     }
 
